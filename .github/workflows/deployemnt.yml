@@ -44,8 +44,7 @@ jobs:
           key: ${{ secrets.KEY }}
           port: 22
           script: |
-            sudo cd /var/apps/frontend-green
-            sudo npm ci
+            cd /var/apps/frontend-green && sudo -E npm ci
 
       - name: Switch to Green Environment
         uses: appleboy/ssh-action@master
