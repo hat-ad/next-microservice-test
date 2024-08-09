@@ -1,0 +1,72 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ENV: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout Source Branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.13.1"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Copy Files to Green Environment
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          source: |
+            .next/
+            package.json
+            package-lock.json
+          target: "/var/apps/frontend-green"
+
+      - name: Installing Dependencies on Green
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          script: |
+            cd /var/apps/frontend-green
+            npm ci
+
+      - name: Switch to Green Environment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          script: |
+            sudo ln -sfn /var/apps/frontend-green /var/apps/frontend
+            sudo systemctl reload nginx
+
+      - name: Restart Application
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          script: |
+            sudo systemctl restart fe.service
