@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.KEY }}
           port: 22
-          source: "package.json"
+          source: ".next/,package.json,package-lock.json"
           target: "/var/apps/frontend-green"
 
       - name: Installing Dependencies on Green
